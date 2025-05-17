@@ -2,7 +2,7 @@
 URL configuration for offers_calculator project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
+    https://docs.djangoproject.com/en/5.1/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -15,11 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.shortcuts import redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('products/', include(('products.urls', 'products'), namespace='products')),
-    path('offers/', include(('offers.urls', 'offers'), namespace='offers')),
-    path('', include(('pages.urls', 'pages'), namespace='pages'))
+    path('accounts/', include('accounts.urls')),  # Routes for accounts app
+    path('products/', include('products.urls')),  # Routes for products app
+    path('offers/', include('offers.urls')),      # Routes for offers app
+    path('', lambda request: redirect('offer_list'), name='home'),  # Redirect root to offers_list
 ]
