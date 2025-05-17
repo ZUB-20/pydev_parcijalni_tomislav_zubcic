@@ -1,82 +1,109 @@
+from django.contrib.auth.models import User
+from products.models import Product
+from offers.models import Offer, OfferItem
+from decimal import Decimal
+from random import randint, choice
+from datetime import datetime, timedelta
 
-import csv
+def run():
+    # List of product names and descriptions
+    product_data = [
+        {"name": "Wireless Keyboard", "description": "A sleek wireless keyboard with ergonomic design and long-lasting battery life. Perfect for work and gaming."},
+        {"name": "Gaming Mouse", "description": "High-precision gaming mouse with customizable RGB lighting and adjustable DPI settings for ultimate control."},
+        {"name": "Noise-Canceling Headphones", "description": "Over-ear headphones with active noise canceling and immersive sound quality for music and calls."},
+        {"name": "Portable SSD", "description": "Ultra-fast portable SSD with 1TB storage capacity and USB-C connectivity. Ideal for data transfer on the go."},
+        {"name": "4K Monitor", "description": "27-inch 4K UHD monitor with HDR support and vibrant color reproduction for professional work and entertainment."},
+        {"name": "Smartwatch", "description": "Stylish smartwatch with fitness tracking, heart rate monitoring, and customizable watch faces."},
+        {"name": "USB-C Hub", "description": "Multi-port USB-C hub with HDMI output, USB 3.0 ports, and SD card reader for enhanced connectivity."},
+        {"name": "Mechanical Keyboard", "description": "Durable mechanical keyboard with tactile switches and customizable backlighting for precision typing."},
+        {"name": "Bluetooth Speaker", "description": "Compact Bluetooth speaker with deep bass and long-lasting battery. Ideal for outdoor activities."},
+        {"name": "Webcam", "description": "1080p HD webcam with built-in microphone and wide-angle lens for high-quality video calls."},
+        {"name": "Graphics Tablet", "description": "Pressure-sensitive graphics tablet for digital artists, with customizable shortcut keys."},
+        {"name": "External Hard Drive", "description": "Reliable 2TB external hard drive with fast data transfer speeds and compact design."},
+        {"name": "Wi-Fi Router", "description": "High-speed Wi-Fi router with dual-band support and wide coverage for seamless internet connectivity."},
+        {"name": "Laptop Stand", "description": "Adjustable laptop stand with cooling design and ergonomic angles for comfortable use."},
+        {"name": "VR Headset", "description": "Virtual reality headset with stunning visuals and immersive gaming experience."},
+        {"name": "Docking Station", "description": "All-in-one docking station with multiple USB ports, Ethernet, and dual monitor support."},
+        {"name": "Smart Home Hub", "description": "Smart home hub for controlling connected devices with voice commands or a mobile app."},
+        {"name": "Portable Projector", "description": "Compact projector with HD resolution and wireless screen mirroring for presentations and movies."},
+        {"name": "3D Printer", "description": "High-precision 3D printer with user-friendly interface and versatile filament compatibility."},
+        {"name": "USB Flash Drive", "description": "32GB USB flash drive with fast read and write speeds. Small and easy to carry."},
+        {"name": "Noise-Canceling Microphone", "description": "Studio-quality microphone with noise-canceling technology for clear audio recordings."},
+        {"name": "Smart Thermostat", "description": "Programmable smart thermostat with energy-saving features and remote control via app."},
+        {"name": "Wireless Charging Pad", "description": "Fast wireless charging pad compatible with all Qi-enabled devices."},
+        {"name": "Gaming Headset", "description": "Over-ear gaming headset with surround sound and noise-isolating microphone."},
+        {"name": "E-Reader", "description": "Lightweight e-reader with a glare-free screen and adjustable brightness for comfortable reading."},
+        {"name": "Mini PC", "description": "Compact and powerful mini PC with multiple connectivity options for home and office use."},
+        {"name": "Dash Cam", "description": "Full HD dash cam with wide-angle lens and night vision for secure driving."},
+        {"name": "Ergonomic Mouse", "description": "Ergonomically designed mouse for reducing wrist strain and enhancing productivity."},
+        {"name": "Standing Desk Converter", "description": "Adjustable standing desk converter for a healthier and more comfortable workspace."},
+        {"name": "Surge Protector", "description": "Advanced surge protector with multiple outlets and USB charging ports."},
+        {"name": "Smart Doorbell", "description": "Smart video doorbell with motion detection and two-way audio for enhanced security."},
+        {"name": "Power Bank", "description": "Portable power bank with 20000mAh capacity for charging devices on the go."},
+        {"name": "Noise-Canceling Earbuds", "description": "Compact earbuds with active noise canceling and superior sound quality."},
+        {"name": "Smart Light Bulbs", "description": "Energy-efficient smart bulbs with adjustable brightness and color temperature."},
+        {"name": "Portable Monitor", "description": "Slim and lightweight portable monitor with USB-C connectivity for dual-screen setups."},
+        {"name": "Action Camera", "description": "Waterproof action camera with 4K video recording and image stabilization."},
+        {"name": "Smart Scale", "description": "Digital smart scale with body composition analysis and app integration."},
+        {"name": "Cable Organizer", "description": "Compact and portable cable organizer for keeping your workspace tidy."},
+        {"name": "Network Switch", "description": "High-performance network switch with multiple ports for stable wired connections."},
+        {"name": "Fingerprint Scanner", "description": "USB fingerprint scanner for secure and quick authentication."},
+        {"name": "Desktop Microphone", "description": "Desktop microphone with noise reduction for streaming and video conferencing."},
+        {"name": "Gaming Chair", "description": "Ergonomic gaming chair with adjustable lumbar support and recline functionality."},
+        {"name": "Drone", "description": "Compact drone with HD camera and easy-to-use controls for aerial photography."},
+        {"name": "Portable Printer", "description": "Portable photo printer with wireless connectivity and compact design."},
+        {"name": "Tablet Stand", "description": "Adjustable tablet stand with sturdy build and multiple viewing angles."},
+        {"name": "LED Desk Lamp", "description": "Energy-efficient LED desk lamp with adjustable brightness and flexible arm."},
+        {"name": "External DVD Drive", "description": "Slim external DVD drive with plug-and-play functionality for laptops."},
+        {"name": "Smart Air Purifier", "description": "Smart air purifier with HEPA filter and real-time air quality monitoring."},
+        {"name": "HDMI Cable", "description": "High-speed HDMI cable with gold-plated connectors for reliable video transmission."},
+    ]
 
-from .ingredients import Ingredient
-
-
-CSV_TEXT = """\
-1,Plastic Resin,PLR-001,High-density polyethylene,2.5,1.02,2.55
-2,Aluminum Sheet,ALS-002,2mm thickness aluminum sheet,3.75,1.05,3.938
-3,Stainless Steel Screws,SSS-003,M3 x 10mm screws,0.1,1.01,0.101
-4,Lithium Battery,LBT-004,3.7V 1000mAh battery,4,1.08,4.32
-5,Copper Wire,CWR-005,1mm diameter copper wire,0.2,1.03,0.206
-6,LED Display,LED-006,16x2 character LCD display,2,1.1,2.2
-7,Microcontroller,MCU-007,ATmega328P microcontroller,5,1.07,5.35
-8,GPS Module,GPS-008,U-blox NEO-6M GPS module,12,1.15,13.8
-9,PCB Board,PCB-009,Double-sided PCB board,1.5,1.02,1.53
-10,Soldering Wire,SOW-010,0.8mm lead-free solder wire,0.05,1.01,0.051
-11,Heat Shrink Tubing,HST-011,2:1 ratio heat shrink tubing,0.1,1.02,0.102
-12,Ferrite Bead,FBD-012,EMI suppression ferrite bead,0.02,1.01,0.02
-13,Ceramic Capacitor,CCA-013,100nF ceramic capacitor,0.01,1,0.01
-14,Resistor,RES-014,10k ohm resistor,0.01,1,0.01
-15,Voltage Regulator,VRG-015,LM7805 voltage regulator,0.5,1.04,0.52
-16,Diode,DIO-016,1N4007 rectifier diode,0.02,1,0.02
-17,Thermal Paste,THP-017,High-performance thermal paste,1,1.05,1.05
-18,Enclosure,ENC-018,ABS plastic enclosure,3,1.1,3.3
-19,Ribbon Cable,RBC-019,10-wire ribbon cable,0.5,1.02,0.51
-20,Push Button,PBM-020,Momentary push button,0.15,1.02,0.153
-21,Transistor,TRN-021,NPN transistor,0.02,1,0.02
-22,Connector,CON-022,2-pin JST connector,0.1,1.02,0.102
-23,Heat Sink,HSK-023,Aluminum heat sink,0.25,1.03,0.258
-24,Crystal Oscillator,CRO-024,16 MHz crystal oscillator,0.05,1.02,0.051
-25,Relay,RLY-025,5 V relay module,1,1.05,1.05
-26,Potentiometer,POT-026,10 kΩ potentiometer,0.2,1.02,0.204
-27,Tactile Switch,TSW-027,6 mm tactile switch,0.02,1.01,0.02
-28,Inductor,IND-028,10 µH inductor,0.03,1.01,0.03
-29,MOSFET,MOS-029,N-channel MOSFET,0.5,1.04,0.52
-30,Ethernet Module,ETH-030,ENC28J60 Ethernet module,7,1.1,7.7
-31,Thermistor,THM-031,10 kΩ thermistor,0.1,1.01,0.101
-32,Optocoupler,OPC-032,4N35 optocoupler,0.2,1.02,0.204
-33,Piezo Buzzer,PBZ-033,5 V piezo buzzer,0.5,1.03,0.515
-34,DC Motor,DCM-034,6 V DC motor,3,1.1,3.3
-35,Motor Driver,MDR-035,L298N motor driver,4,1.08,4.32
-36,Light Sensor,LSR-036,Photodiode light sensor,0.3,1.02,0.306
-37,Speaker,SPK-037,8 Ω speaker,2,1.05,2.1
-38,Temperature Sensor,TMP-038,DS18B20 temperature sensor,1.5,1.05,1.575
-39,Humidity Sensor,HMS-039,DHT22 humidity sensor,3,1.1,3.3
-40,Pressure Sensor,PRS-040,BMP280 pressure sensor,4,1.08,4.32
-41,Proximity Sensor,PRX-041,IR proximity sensor,1,1.05,1.05
-42,Gyroscope,GYR-042,MPU6050 gyroscope module,3.5,1.1,3.85
-43,Accelerometer,ACC-043,ADXL345 accelerometer,2.5,1.08,2.7
-44,Ultrasonic Sensor,ULS-044,HC-SR04 ultrasonic sensor,2,1.07,2.14
-45,Hall Effect Sensor,HLS-045,A3144 Hall effect sensor,0.5,1.03,0.515
-46,Vibration Motor,VBM-046,3 V vibration motor,1.5,1.05,1.575
-47,Light Emitting Diode,LED-047,5 mm red LED,0.02,1.01,0.02
-48,Capacitive Touch Sensor,CTS-048,TTP223 touch sensor,1,1.05,1.05
-49,RFID Module,RFID-049,RC522 RFID module,5,1.07,5.35
-50,OLED Display,OLE-050,0.96-inch OLED display,6,1.1,6.6
-"""
-
-def ingredients_db_seed(request):
-    csv_reader = csv.reader(CSV_TEXT.strip().splitlines())
-    ingredients_list = []
-
-    for (_,
-         name,
-         code,
-         description,
-         base_price,
-         price_mod,
-         final_price
-    ) in csv_reader:
-        ingredients_list.append(
-            Ingredient(
-                name=name,
-                code=code,
-                description=description,
-                base_price=base_price,
-                price_mod=price_mod,
-                final_price=final_price
+    # Create products
+    if Product.objects.count() == 0:
+        print("Seeding 50 products...")
+        for product in product_data:
+            Product.objects.create(
+                name=product["name"],
+                description=product["description"],
+                price=Decimal(randint(100, 1000))
             )
-        )
-    Ingredient.objects.bulk_create(ingredients_list)
+        print("Products seeded successfully.")
+    else:
+        print("Products already exist, skipping seeding.")
+
+    # Get superuser account
+    superuser = User.objects.filter(is_superuser=True).first()
+    if not superuser:
+        print("Superuser account not found. Please create one first.")
+        return
+
+    # Create offers
+    if Offer.objects.count() == 0:
+        print("Seeding 15 offers...")
+        products = list(Product.objects.all())
+        for i in range(1, 16):
+            offer_date = datetime.now() - timedelta(days=randint(1, 30))
+            selected_products = [choice(products) for _ in range(randint(3, 7))]
+
+            sub_total = sum(p.price for p in selected_products)
+            tax = sub_total * Decimal("0.2")  # 20% tax
+            total = sub_total + tax
+
+            offer = Offer.objects.create(
+                customer=superuser,
+                date=offer_date.date(),
+                sub_total=sub_total,
+                tax=tax,
+                total=total
+            )
+
+            for product in selected_products:
+                OfferItem.objects.create(
+                    offer=offer,
+                    product=product,
+                    quantity=randint(1, 3)
+                )
+        print("Offers seeded successfully.")
+    else:
+        print("Offers already exist, skipping seeding.")
